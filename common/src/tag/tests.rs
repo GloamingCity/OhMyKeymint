@@ -21,8 +21,6 @@ use std::vec;
 fn test_asymmetric_invalid_purposes() {
     for (algorithm, invalid_purpose) in [
         (Algorithm::Rsa, KeyPurpose::AgreeKey),
-        (Algorithm::Ec, KeyPurpose::Encrypt),
-        (Algorithm::Ec, KeyPurpose::Decrypt),
         (Algorithm::Ec, KeyPurpose::WrapKey),
         (Algorithm::MlDsa, KeyPurpose::Encrypt),
         (Algorithm::MlDsa, KeyPurpose::Decrypt),
@@ -48,6 +46,28 @@ fn test_asymmetric_invalid_purposes() {
             assert!(
                 matches!(error.kind(), crate::ErrorKind::Hal(ErrorCode::IncompatiblePurpose, _)),
                 "unexpected error for {algorithm:?} {purposes:?}: {error:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn test_ec_tolerated_purposes() {
+    for tolerated_purpose in [KeyPurpose::Decrypt, KeyPurpose::Encrypt] {
+        for purposes in [
+            vec![KeyPurpose::Sign, tolerated_purpose],
+            vec![tolerated_purpose, KeyPurpose::Sign],
+        ] {
+            let params: Vec<_> = purposes.iter().copied().map(KeyParam::Purpose).collect();
+            let result = check_ec_params(EcCurve::P256, &params, SecurityLevel::TrustedEnvironment);
+            assert!(
+                result.is_ok(),
+                "EC should tolerate {tolerated_purpose:?} combined with Sign in any order"
+            );
+            assert_eq!(
+                result.unwrap(),
+                Some(KeyPurpose::Sign),
+                "primary purpose must remain Sign regardless of order"
             );
         }
     }
@@ -148,6 +168,28 @@ fn test_asymmetric_attest_key_excludes_private_key_purposes() {
             assert!(
                 matches!(error.kind(), crate::ErrorKind::Hal(ErrorCode::IncompatiblePurpose, _)),
                 "unexpected error for {algorithm:?} {purposes:?}: {error:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn test_ec_tolerated_purposes() {
+    for tolerated_purpose in [KeyPurpose::Decrypt, KeyPurpose::Encrypt] {
+        for purposes in [
+            vec![KeyPurpose::Sign, tolerated_purpose],
+            vec![tolerated_purpose, KeyPurpose::Sign],
+        ] {
+            let params: Vec<_> = purposes.iter().copied().map(KeyParam::Purpose).collect();
+            let result = check_ec_params(EcCurve::P256, &params, SecurityLevel::TrustedEnvironment);
+            assert!(
+                result.is_ok(),
+                "EC should tolerate {tolerated_purpose:?} combined with Sign in any order"
+            );
+            assert_eq!(
+                result.unwrap(),
+                Some(KeyPurpose::Sign),
+                "primary purpose must remain Sign regardless of order"
             );
         }
     }

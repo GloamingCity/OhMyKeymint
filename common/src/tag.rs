@@ -701,9 +701,24 @@ fn check_ec_params(
     for param in params {
         if let KeyParam::Purpose(purpose) = param {
             match purpose {
-                KeyPurpose::Sign => seen_sign = true,
-                KeyPurpose::AgreeKey => seen_agree = true,
-                KeyPurpose::AttestKey => seen_attest = true,
+                KeyPurpose::Sign => {
+                    seen_sign = true;
+                    if primary_purpose.is_none() {
+                        primary_purpose = Some(*purpose);
+                    }
+                }
+                KeyPurpose::AgreeKey => {
+                    seen_agree = true;
+                    if primary_purpose.is_none() {
+                        primary_purpose = Some(*purpose);
+                    }
+                }
+                KeyPurpose::AttestKey => {
+                    seen_attest = true;
+                    if primary_purpose.is_none() {
+                        primary_purpose = Some(*purpose);
+                    }
+                }
                 KeyPurpose::Verify => {}
                 KeyPurpose::Decrypt | KeyPurpose::Encrypt => {}
                 _ => {
@@ -712,9 +727,6 @@ fn check_ec_params(
                         "invalid purpose {purpose:?} for EC key"
                     ));
                 }
-            }
-            if primary_purpose.is_none() {
-                primary_purpose = Some(*purpose);
             }
         }
     }
