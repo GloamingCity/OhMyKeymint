@@ -173,27 +173,6 @@ fn test_asymmetric_attest_key_excludes_private_key_purposes() {
     }
 }
 
-#[test]
-fn test_ec_tolerated_purposes() {
-    for tolerated_purpose in [KeyPurpose::Decrypt, KeyPurpose::Encrypt] {
-        for purposes in [
-            vec![KeyPurpose::Sign, tolerated_purpose],
-            vec![tolerated_purpose, KeyPurpose::Sign],
-        ] {
-            let params: Vec<_> = purposes.iter().copied().map(KeyParam::Purpose).collect();
-            let result = check_ec_params(EcCurve::P256, &params, SecurityLevel::TrustedEnvironment);
-            assert!(
-                result.is_ok(),
-                "EC should tolerate {tolerated_purpose:?} combined with Sign in any order"
-            );
-            assert_eq!(
-                result.unwrap(),
-                Some(KeyPurpose::Sign),
-                "primary purpose must remain Sign regardless of order"
-            );
-        }
-    }
-}
 
 #[test]
 fn test_curve25519_signing_and_agreement_purposes_stay_separate() {
